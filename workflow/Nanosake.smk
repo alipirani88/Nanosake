@@ -30,6 +30,7 @@ rule all:
         prokka = expand("results/{prefix}/prokka/{combination}_unicycler.gff", barcode=BARCODE, sample=SAMPLE, prefix=PREFIX,combination=COMBINATION),
         quast_out = expand("results/{prefix}/quast/{combination}_unicycler/report.txt", barcode=BARCODE, sample=SAMPLE, prefix=PREFIX, combination=COMBINATION),
         busco_out = expand("results/{prefix}/busco/{combination}.unicycler/busco_unicycler.txt", barcode=BARCODE, sample=SAMPLE, prefix=PREFIX, combination=COMBINATION),
+        #multiqc_report = expand("results/{prefix}/multiqc/multiqc_report.html",prefix=PREFIX)
 
 rule pycoqc:
     input:
@@ -100,9 +101,8 @@ rule nanoplot:
 
 rule trimmomatic_pe:
     input:
-        r1 = lambda wildcards: expand(str(config["short_reads"] + "/" + f"{wildcards.sample}_R1.fastq.gz")),
-        r2 = lambda wildcards: expand(str(config["short_reads"] + "/" + f"{wildcards.sample}_R2.fastq.gz")),
-        
+        r1 = lambda wildcards: expand(str(config["short_reads"] + "/" + f"{wildcards.sample}_L001_R1_001.fastq.gz")),
+        r2 = lambda wildcards: expand(str(config["short_reads"] + "/" + f"{wildcards.sample}_L001_R2_001.fastq.gz")),
     output:
         r1 = f"results/{{prefix}}/trimmomatic/{{barcode}}/{{sample}}/{{sample}}_R1_paired.fastq.gz",
         r2 = f"results/{{prefix}}/trimmomatic/{{barcode}}/{{sample}}/{{sample}}_R2_paired.fastq.gz", 
@@ -123,8 +123,8 @@ rule trimmomatic_pe:
         threads = config["ncores"],
     log:
         "logs/{prefix}/trimmomatic/{barcode}/{sample}/{sample}.log"
-    # conda:
-    #     "envs/trimmomatic.yaml"
+    #conda:
+        #"envs/trimmomatic.yaml"
     singularity:
         "docker://staphb/trimmomatic:0.39"
     shell:
@@ -150,7 +150,6 @@ rule flye:
         "docker://staphb/flye:2.9.3"
     shell:
         "flye --nano-hq {input.trimmed} -g {params.size} -o {params.assembly_dir} -t {params.threads} {params.flye_options} && cp {params.assembly_dir}/assembly.fasta {params.assembly_dir}/{params.prefix}_flye.fasta &>{log}"
-
 
 rule flye_add_circ:
     input:
@@ -214,25 +213,33 @@ rule bwaalign:
     shell:
         "bwa index {input.medaka_assembly} && bwa mem -t12 -a {input.medaka_assembly} {input.r1} > {output.samout_1} && bwa mem -t12 -a {input.medaka_assembly} {input.r2} > {output.samout_2} && bwa mem -t12 -a {input.medaka_assembly} {input.r1_unpaired} > {output.samout_3} && bwa mem -t12 -a {input.medaka_assembly} {input.r2_unpaired} > {output.samout_4}"
 
-rule bwaalign_polypolish:
-    input:
-        r1 = lambda wildcards: expand(f"results/{wildcards.prefix}/trimmomatic/" + f"{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}_R1_paired.fastq.gz"),
-        r2 = lambda wildcards: expand(f"results/{wildcards.prefix}/trimmomatic/" + f"{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}_R2_paired.fastq.gz"),
-        #r1_unpaired = lambda wildcards: expand(f"results/{wildcards.prefix}/trimmomatic/" + f"{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}_R1_unpaired.fastq.gz"),
-        #r2_unpaired = lambda wildcards: expand(f"results/{wildcards.prefix}/trimmomatic/" + f"{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}_R2_unpaired.fastq.gz"),
-        polypolish_assembly = f"results/{{prefix}}/polypolish/{{barcode}}/{{sample}}/{{sample}}_flye_medaka_polypolish.fasta"
-    output:
-        samout = f"results/{{prefix}}/pilon/{{barcode}}/{{sample}}/{{sample}}.sam",
-        bamout = f"results/{{prefix}}/pilon/{{barcode}}/{{sample}}/{{sample}}.bam",
-        bamout_sorted = f"results/{{prefix}}/pilon/{{barcode}}/{{sample}}/{{sample}}_sorted.bam",
-    params:
-        threads = config["ncores"],
-    # conda:
-    #     "envs/bwa.yaml"
-    singularity:
-        "docker://staphb/bwa:0.7.17"
-    shell:
-        "bwa index {input.polypolish_assembly} && bwa mem -t12 {input.polypolish_assembly} {input.r1} {input.r2} > {output.samout} && samtools view -Sb {output.samout} > {output.bamout} && samtools sort -o {output.bamout_sorted} {output.bamout} && samtools index {output.bamout_sorted}"
+# Deprecated: This rule was used for pilon 
+#rule bwaalign_polypolish:
+#    input:
+#        r1 = lambda wildcards: expand(f"results/{wildcards.prefix}/trimmomatic/" + f"{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}_R1_paired.fastq.gz"),
+#        r2 = lambda wildcards: expand(f"results/{wildcards.prefix}/trimmomatic/" + f"{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}_R2_paired.fastq.gz"),
+#        polypolish_assembly = f"results/{{prefix}}/polypolish/{{barcode}}/{{sample}}/{{sample}}_flye_medaka_polypolish.fasta"
+#    output:
+#        samout = f"results/{{prefix}}/pilon/{{barcode}}/{{sample}}/{{sample}}.sam"
+#    params:
+#        threads = config["ncores"],
+    #conda:
+        #"envs/bwa.yaml"
+#    singularity:
+#        "docker://staphb/bwa:0.7.17"
+#    shell:
+#        "bwa index {input.polypolish_assembly} && bwa mem -t12 {input.polypolish_assembly} {input.r1} {input.r2} > {output.samout}"
+
+#rule bwaalign_polypolish_samtools_sort_index:
+#    input:
+#        samout = lambda wildcards: expand(f"results/{wildcards.prefix}/pilon/{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}.sam")
+#    output:
+#        bamout = f"results/{{prefix}}/pilon/{{barcode}}/{{sample}}/{{sample}}.bam",
+#        bamout_sorted = f"results/{{prefix}}/pilon/{{barcode}}/{{sample}}/{{sample}}_sorted.bam",
+#    singularity:
+#        "docker://staphb/samtools:1.20"
+#    shell:
+#        "samtools view -Sb {input.samout} > {output.bamout} && samtools sort -o {output.bamout_sorted} {output.bamout} && samtools index {output.bamout_sorted}"
 
 rule bwaalign_unicycler:
     input:
@@ -315,23 +322,33 @@ rule polypolish_unicycler:
     shell:
         "polypolish filter --in1 {input.samout_1} --in2 {input.samout_2} --out1 {output.filtersam1} --out2 {output.filtersam2} && polypolish polish {input.unicycler_assembly} {output.filtersam1} {output.filtersam2} > {output.unicycler_polypolish}"
 
-rule bwaalign_polypolish_unicycler:
-    input:
-        r1 = lambda wildcards: expand(f"results/{wildcards.prefix}/trimmomatic/" + f"{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}_R1_paired.fastq.gz"),
-        r2 = lambda wildcards: expand(f"results/{wildcards.prefix}/trimmomatic/" + f"{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}_R2_paired.fastq.gz"),
-        polypolish_unicycler_assembly = f"results/{{prefix}}/polypolish_unicycler/{{barcode}}/{{sample}}/{{sample}}_unicycler_polypolish.fasta"
-    output:
-        samout = f"results/{{prefix}}/pilon_unicycler/{{barcode}}/{{sample}}/{{sample}}.sam",
-        bamout = f"results/{{prefix}}/pilon_unicycler/{{barcode}}/{{sample}}/{{sample}}.bam",
-        bamout_sorted = f"results/{{prefix}}/pilon_unicycler/{{barcode}}/{{sample}}/{{sample}}_sorted.bam",
-    params:
-        threads = config["ncores"],
-    # conda:
-    #     "envs/bwa.yaml"
-    singularity:
-        "docker://staphb/bwa:0.7.17"
-    shell:
-        "bwa index {input.polypolish_unicycler_assembly} && bwa mem -t12 {input.polypolish_unicycler_assembly} {input.r1} {input.r2} > {output.samout} && samtools view -Sb {output.samout} > {output.bamout} && samtools sort -o {output.bamout_sorted} {output.bamout} && samtools index {output.bamout_sorted}"
+# # Deprecated: This rule was used for pilon
+#rule bwaalign_polypolish_unicycler:
+#    input:
+#        r1 = lambda wildcards: expand(f"results/{wildcards.prefix}/trimmomatic/" + f"{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}_R1_paired.fastq.gz"),
+#        r2 = lambda wildcards: expand(f"results/{wildcards.prefix}/trimmomatic/" + f"{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}_R2_paired.fastq.gz"),
+#        polypolish_unicycler_assembly = f"results/{{prefix}}/polypolish_unicycler/{{barcode}}/{{sample}}/{{sample}}_unicycler_polypolish.fasta"
+#    output:
+#        samout = f"results/{{prefix}}/pilon_unicycler/{{barcode}}/{{sample}}/{{sample}}.sam"
+#    params:
+#        threads = config["ncores"],
+    #conda:
+        #"envs/bwa.yaml"
+#    singularity:
+#        "docker://staphb/bwa:0.7.17"
+#    shell:
+#        "bwa index {input.polypolish_unicycler_assembly} && bwa mem -t12 {input.polypolish_unicycler_assembly} {input.r1} {input.r2} > {output.samout}"
+    
+#rule bwaalign_polypolish_unicycler_samtools_sort_index:
+#    input:
+#        samout = lambda wildcards: expand(f"results/{wildcards.prefix}/pilon_unicycler/{wildcards.barcode}/{wildcards.sample}/{wildcards.sample}.sam"),
+#    output:
+#        bamout = f"results/{{prefix}}/pilon_unicycler/{{barcode}}/{{sample}}/{{sample}}.bam",
+#        bamout_sorted = f"results/{{prefix}}/pilon_unicycler/{{barcode}}/{{sample}}/{{sample}}_sorted.bam",
+#    singularity:
+#        "docker://staphb/samtools:1.20"
+#    shell:
+#        "samtools view -Sb {input.samout} > {output.bamout} && samtools sort -o {output.bamout_sorted} {output.bamout} && samtools index {output.bamout_sorted}"
 
 rule prokka:
     input:
@@ -367,14 +384,14 @@ rule quast:
     # conda:
     #     "envs/quast.yaml"
     singularity:
-        "docker://staphb/quast:5.0.2"
+        "docker://staphb/quast:latest"
     shell:
-        "quast {input.unicycler_assembly} -o {params.quast_dir}_unicycler && quast {input.unicycler_polypolish} -o {params.quast_dir}_unicycler_polypolish && quast {input.flye_medaka_polypolish} -o {params.quast_dir}_flye_medaka_polypolish && quast {input.flye_assembly} -o {params.quast_dir}_flye"
+        "quast.py {input.unicycler_assembly} -o {params.quast_dir}_unicycler && quast.py {input.unicycler_polypolish} -o {params.quast_dir}_unicycler_polypolish && quast.py {input.flye_medaka_polypolish} -o {params.quast_dir}_flye_medaka_polypolish && quast.py {input.flye_assembly} -o {params.quast_dir}_flye"
 
 rule busco:
     input:
         unicycler_polypolish = f"results/{{prefix}}/polypolish_unicycler/{{barcode}}/{{sample}}/{{sample}}_unicycler_polypolish.fasta",
-        unicycler_assembly = f"results/{{prefix}}/unicycler/{{barcode}}/{{sample}}/{{sample}}_unicycler.fasta",
+        unicycler = f"results/{{prefix}}/unicycler/{{barcode}}/{{sample}}/{{sample}}_unicycler.fasta",
         flye_medaka_polypolish = f"results/{{prefix}}/polypolish/{{barcode}}/{{sample}}/{{sample}}_flye_medaka_polypolish.fasta",
         flye_assembly = f"results/{{prefix}}/flye/{{barcode}}/{{sample}}/{{sample}}_flye.fasta",
     output:
@@ -394,14 +411,13 @@ rule busco:
     singularity:
         "docker://staphb/busco:latest"
     shell:
-        "busco -f -i {input.unicycler_assembly} -m genome -l bacteria_odb10 -o {params.busco_outpath}.unicycler && cp {params.busco_outpath}.unicycler/{params.unicycler_busco_out} {params.busco_outpath}.unicycler/busco_unicycler.txt && busco -f -i {input.unicycler_polypolish} -m genome -l bacteria_odb10 -o {params.busco_outpath}.unicycler_polypolish && cp {params.busco_outpath}.unicycler_polypolish/{params.unicycler_polypolish_busco_out} {params.busco_outpath}.unicycler_polypolish/busco_unicycler_polypolish.txt && busco -f -i {input.flye_medaka_polypolish} -m genome -l bacteria_odb10 -o {params.busco_outpath}.flye_medaka_polypolish && cp {params.busco_outpath}.flye_medaka_polypolish/{params.flye_medaka_polypolish_busco_out} {params.busco_outpath}.flye_medaka_polypolish/busco_flye_medaka_polypolish.txt && cp {params.busco_outpath}.medaka_assembly/{params.medaka_assembly_busco_out} {params.busco_outpath}.medaka_assembly/busco_medaka_assembly.txt && busco -f -i {input.flye_assembly} -m genome -l bacteria_odb10 -o {params.busco_outpath}.flye_assembly && cp {params.busco_outpath}.flye_assembly/{params.flye_assembly_busco_out} {params.busco_outpath}.flye_assembly/busco_flye_assembly.txt"
+        "busco -f -i {input.unicycler} -m genome -l bacteria_odb10 -o {params.busco_outpath}.unicycler && cp {params.busco_outpath}.unicycler/{params.unicycler_busco_out} {params.busco_outpath}.unicycler/busco_unicycler.txt && busco -f -i {input.unicycler_polypolish} -m genome -l bacteria_odb10 -o {params.busco_outpath}.unicycler_polypolish && cp {params.busco_outpath}.unicycler_polypolish/{params.unicycler_polypolish_busco_out} {params.busco_outpath}.unicycler_polypolish/busco_unicycler_polypolish.txt && busco -f -i {input.flye_medaka_polypolish} -m genome -l bacteria_odb10 -o {params.busco_outpath}.flye_medaka_polypolish && cp {params.busco_outpath}.flye_medaka_polypolish/{params.flye_medaka_polypolish_busco_out} {params.busco_outpath}.flye_medaka_polypolish/busco_flye_medaka_polypolish.txt && busco -f -i {input.flye_assembly} -m genome -l bacteria_odb10 -o {params.busco_outpath}.flye_assembly && cp {params.busco_outpath}.flye_assembly/{params.flye_assembly_busco_out} {params.busco_outpath}.flye_assembly/busco_flye_assembly.txt"
 
 rule multiqc:
     input:
         quast_out = f"results/{{prefix}}/quast/",
         busco_dir_out = f"results/{{prefix}}/busco/",
         unicycler_annotation = f"results/{{prefix}}/prokka/",
-
     output:
         multiqc_out = f"results/{{prefix}}/multiqc/multiqc_report.html",
     params:
@@ -419,4 +435,3 @@ rule multiqc:
     shell:
         #{params.pycoqc_dir_out}
         "multiqc -o {params.multiqc_out_dir} -f {params.prokka_dir_out} {params.busco_dir_out} {params.quast_dir_out}"
-
