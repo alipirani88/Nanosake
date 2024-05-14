@@ -21,7 +21,7 @@ rule all:
     input:
         #pycoqc_report = expand("results/{prefix}/pycoqc/{prefix}.html", prefix=PREFIX),
         trimmed = expand("results/{prefix}/filtlong/{combination}.trimmed.fastq.gz", barcode=BARCODE, sample=SAMPLE, prefix=PREFIX, combination=COMBINATION),
-	    nanoplot = expand("results/{prefix}/nanoplot/{combination}_preqcNanoPlot-report.html", barcode=BARCODE, sample=SAMPLE, prefix=PREFIX, combination=COMBINATION),
+	nanoplot = expand("results/{prefix}/nanoplot/{combination}_preqcNanoPlot-report.html", barcode=BARCODE, sample=SAMPLE, prefix=PREFIX, combination=COMBINATION),
         flye_assembly = expand("results/{prefix}/flye/{combination}_flye.fasta", barcode=BARCODE, sample=SAMPLE, prefix=PREFIX, combination=COMBINATION),
         flye_circ_assembly = expand("results/{prefix}/flye/{combination}_flye_circ.fasta", barcode=BARCODE, sample=SAMPLE, prefix=PREFIX, combination=COMBINATION),
         medaka_out = expand("results/{prefix}/medaka/{combination}_medaka.fasta", barcode=BARCODE, sample=SAMPLE, prefix=PREFIX, combination=COMBINATION),
@@ -78,7 +78,8 @@ rule nanopore_filtlong:
     log:
         "logs/{prefix}/porechop/{barcode}/{sample}/{sample}.log"
     shell:
-        'cat {input.longreads}/*.fastq.gz > /tmp/{params.prefix}.gz | filtlong --min_length 1000 --keep_percent 95 /tmp/{params.prefix}.gz | gzip > {output.trimmed} && rm /tmp/{params.prefix}.gz'
+        #'cat {input.longreads}/*.fastq.gz > /tmp/{params.prefix}.gz | filtlong --min_length 1000 --keep_percent 95 /tmp/{params.prefix}.gz | gzip > {output.trimmed} && rm /tmp/{params.prefix}.gz'
+        'filtlong --min_length 1000 --keep_percent 95 {input.longreads}/*.fastq.gz | gzip > {output.trimmed}'
 
 rule nanoplot:
     input:
