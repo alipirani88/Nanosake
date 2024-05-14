@@ -1,5 +1,20 @@
 # Nanosake
-A Snakemake workflow to basecall, quality control and assemble Nanopore data.
+A Snakemake workflow to quality control and assemble Nanopore data using Long reads first and Hybrid approach.
+
+### Summary
+
+The Nanosake workflow can be split into two parts - based on the type of data it uses first to assemble the reads (Long reads first Flye assembly vs Hybrid Unicycler assembly)
+
+In short, it performs the following steps:
+
+- Runs [Filtlong](https://github.com/rrwick/Filtlong) to remove low quality reads and discards reads less than 1000 Bp. (--min_length 1000 --keep_percent 95)
+- Generates pre and post-Filtlong QC plots using [Nanoplot](https://github.com/wdecoster/NanoPlot).
+- Assemble clean filtlong nanopore reads with [Flye](https://github.com/fenderglass/Flye) assembler.
+- Flye-only assembly is then polished with long reads using Medaka, followed by polishing with clean trimmed illumina reads using [Polypolish](https://github.com/rrwick/Polypolish) - to generate Flye+Medaka+Polypolish assembly.
+- For the short illumina read first approach, Long reads are assembled in hybrid mode using [Unicycler](https://github.com/rrwick/Unicycler) - medium mode, followed by polishing with short reads using Polypolish.
+- The Flye-only, Flye+Medaka+Polypolish, Unicycler+Polypolish assembles the passes through [Prokka](https://github.com/tseemann/prokka) for annoatation, [BUSCO](https://busco.ezlab.org/) for assembly completeness statistics and [QUAST](https://quast.sourceforge.net/) for assembly statistics.
+
+All the final assembly and annotation are finally placed in prokka directory.
 
 ## Installation
 
@@ -31,17 +46,5 @@ snakemake -s Nanosake.smk -p --use-conda -j 999 --cluster "sbatch -A {cluster.ac
 ```
 
 ![Alt text](./dag.svg)
-
-### Summary
-
-The Nanosake workflow can be split into two parts - based on the type of data it uses first to assemble the reads.  
-
-- It generates various pre and post Filtlong QC plots (performs quality/length trimming with Filtlong) for ONT long reads using Nanoplot.
-- It then takes a long reads first approach and assembles the clean ONT long reads with Flye assembler.
-- Flye assembly is then polished with long reads using Medaka, followed by polishing with clean trimmed illumina reads using Polypolish.
-- For the short illumina read first approach, Long reads are assembled in hybrid mode using Unicycler, followed by polishing with short reads using Polypolish.
-- The Flye-only, Flye+Medaka+Polypolish, Unicycler+Polypolish assembles the passes through Prokka for annoatation, BUSCO for assembly completeness statistics and QUAST for assembly statistics.
-
-All the final assembly and annotation are finally placed in prokka directory.
 
 
