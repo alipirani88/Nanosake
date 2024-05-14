@@ -48,8 +48,9 @@ for read1 in *_R1.fastq.gz; do sample_id=`echo $i | sed 's/_R1.fastq.gz//g'`; re
 
 ```
 
-### Customize the config.yaml according to your samples
-Customise snakemake configuration settings in config/config.yaml file as per your needs and create a sample list file in config/samples.tsv
+### Customize config.yaml and set tool specific parameters.
+
+Set path to your sample.tsv, ONT long reads and illumina short reads path in config.yaml file.
 
 ## Quick start
 
