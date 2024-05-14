@@ -24,6 +24,8 @@ All the final assembly and annotation are finally placed in prokka directory.
 git clone https://github.com/alipirani88/Nanosake.git
 ```
 
+The workflow makes use of singularity containers available from State Public Health - Bioinformatics group. If you are working on UMICH Great Lakes - you can load snakemake and singularity module in the following manner. If you are trying to run it on your local or other computing platform, make sure you have snakemake and singularity installed.
+
 > Load bioinformatics and snakemake module from Great Lakes modules.
 
 ```
@@ -32,6 +34,18 @@ module load Bioinformatics
 
 ```
 module load snakemake singularity
+```
+
+As an input, the snakemake file takes a config file where you can set the path to sample.tsv sample lookup file, path to your long and short reads, path to adapter fasta file etc. sample.tsv should be a comma seperated file, consisting of four columns - barcode_id(barcode id outputted by Minion or can be same as sample_id in case you dont have barcode information),sample_id (genome ID - this should be prefix that should be extracted from your illumina fastq reads),illumina_r1 (forward read 1),illumina_r2 (reverse read 2)
+
+You can create sample.tsv file using the following for loop. It assumes that you are running for loop from the folder that contains your illumina short reads.
+  
+```
+
+echo "barcode_id,sample_id,illumina_r1,illumina_r2" > sample.tsv
+
+for read1 in *_R1.fastq.gz; do sample_id=`echo $i | sed 's/_R1.fastq.gz//g'`; read2=`echo $i | sed 's/_R1.fastq.gz/_R2.fastq.gz/g'`; echo $sample_id,$sample_id,$read1,$read2; done >> sample.tsv 
+
 ```
 
 ### Customize the config.yaml according to your samples
