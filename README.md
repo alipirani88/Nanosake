@@ -16,7 +16,7 @@ module load Bioinformatics
 ```
 
 ```
-module load snakemake
+module load snakemake singularity
 ```
 
 ### Customize the config.yaml according to your samples
