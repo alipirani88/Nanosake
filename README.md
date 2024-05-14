@@ -30,7 +30,7 @@ Customise snakemake configuration settings in config/config.yaml file as per you
 snakemake -s Nanosake.smk -p --use-conda -j 999 --cluster "sbatch -A {cluster.account} -p {cluster.partition} -N {cluster.nodes}  -t {cluster.walltime} -c {cluster.procs} --mem-per-cpu {cluster.pmem}" --conda-frontend conda --cluster-config config/cluster.json --configfile config/config.yaml --latency-wait 1000
 ```
 
-![Alt text](./dag.pdf)
+![Alt text](./dag.svg)
 
 ### Summary
 
