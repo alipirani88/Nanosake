@@ -63,3 +63,25 @@ snakemake -s Nanosake.smk -p --use-conda -j 999 --cluster "sbatch -A {cluster.ac
 ![Alt text](./dag.svg)
 
 
+The workflow generates all the output in the output prefix folder set in the config file. Each workflow steps gets its own individual folder as shown below:
+
+```
+results/2024-05-01_Test_singularity/
+├── busco
+├── filtlong
+├── flye
+├── medaka
+├── nanoplot
+├── polypolish
+├── polypolish_unicycler
+├── prokka
+├── quast
+├── trimmomatic
+└── unicycler
+```
+
+You can generate a MultiQC report by running it on prokka, quast, busco and nanoplot folder.
+
+```
+multiqc -o multiqc_out_dir -f prokka/ busco/ quast/ nanoplot/
+```
