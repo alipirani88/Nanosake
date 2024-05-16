@@ -83,5 +83,5 @@ results/2024-05-01_Test_singularity/
 You can generate a MultiQC report by running it on prokka, quast, busco and nanoplot folder.
 
 ```
-multiqc -o multiqc_out_dir -f prokka/ busco/ quast/ nanoplot/
+multiqc --filename multiqc_report_filename -o multiqc_output_dir -f prokka/ busco/ quast/ nanoplot/
 ```
