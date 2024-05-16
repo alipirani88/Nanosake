@@ -370,7 +370,7 @@ rule quast:
     singularity:
         "docker://staphb/quast:5.0.2"
     shell:
-        "quast {input.unicycler_assembly} -o {params.quast_dir}_unicycler && quast {input.unicycler_polypolish} -o {params.quast_dir}_unicycler_polypolish && quast {input.flye_medaka_polypolish} -o {params.quast_dir}_flye_medaka_polypolish && quast {input.flye_assembly} -o {params.quast_dir}_flye"
+        "quast.py {input.unicycler_assembly} -o {params.quast_dir}_unicycler && quast {input.unicycler_polypolish} -o {params.quast_dir}_unicycler_polypolish && quast {input.flye_medaka_polypolish} -o {params.quast_dir}_flye_medaka_polypolish && quast {input.flye_assembly} -o {params.quast_dir}_flye"
 
 rule busco:
     input:
